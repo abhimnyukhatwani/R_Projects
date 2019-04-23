@@ -1,0 +1,182 @@
+---
+title: "Midterm Project"
+author: "Abhimanyu Khatwani"
+date: "April 5, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Tidy Tuesday Dairy Data
+
+This dataset comes from the USDA(United States Department of Agriculture).
+
+1. milkcow_facts.csv
+2. milk_facts.csv
+3. milk_products_facts.csv
+4. clean_cheese.csv
+5. state_milk_production.csv
+
+### Introduction 
+
+*Problem Statement*: The dairy problem of America showa that milk production in USA has increased by 12-13% over the past 10 years but milk consumption has reduced. Excess milk is converted to cheese reducing wastage. Excess milk products therefore gets stached in warehouses and increase inventory cost and increase the chance of expiration. 
+
+
+*Approach Taken*: Various plots, hostograms and regression will be performed and it will halp me derive patterns of the dairy products in high demand and less demand and therefore based on the consumption of the products, it can be suggested that raw milk can be routed in maximum quantity to the product will sells best and is consumed the most
+
+*How will my analysis help?* The major problem is the disparity between production and consumption patterns and seeing the data I am going to analyse if any trends can be found and this disparity can be removed
+
+
+### Packages Required
+
+*Package Names:*
+
+**Package Name**  | Description
+-------------     | -------------
+readxl            | Parses a flat file into a tibble
+readr             | Gets data out of Excel and into R
+dplyr             | Data manipulation
+tidyr             | Makes it easy to "tidy" your data
+
+*Loading Packages*
+
+```{r warning = FALSE, message = FALSE}
+#Reading libraries
+library(readxl)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+        
+```
+
+
+### Data Preparation
+
+*Source of the dataset:--* <https://github.com/rfordatascience/tidytuesday>
+
+*Explanation of the dataset:--* It contains 5 datasets namely:
+
+*1 milk_products_facts:*  18 variables.
+*2 milkcow_facts:*  11 variables.
+*3 fluid_milk_sales:*  3 variables.
+*4 clesn_cheese:*  18 variables.
+*5 state_milk_production:*  18 variables.
+
+#### Data importing and cleaning 
+
+
+```{r message = FALSE}
+#Setting working directory
+setwd("C:/Users/abhim/OneDrive/Documents/Courses/Data Wrangling")
+getwd()
+
+#Reading libraries
+library(readr)
+library(readxl)
+library(dplyr)
+library(tidyr)
+
+
+#Importing the data for '70 - '94
+excel_sheets("Midterm/cheese_per_cap.xlsx")
+cheese1<- read_excel("Midterm/cheese_per_cap.xlsx", sheet = "Cheese per cap '70-'94", skip = 2)
+
+#Cleaning top of the spreadsheet data from '70 - '94
+cheese1<- cheese1[-c(1,12,23,29:70), ]
+cheese1<- cheese1[ ,-c(5,6,7,9,10)]
+colnames(cheese1) <- c("Year", "Cheddar", "American Other", "Total American Cheese", "Mozzarella","Total Italian Cheese", "Swiss", "Brick")
+cheese1$'Italian Other' <- as.numeric(cheese1$`Total Italian Cheese`) - as.numeric(cheese1$Mozzarella)
+
+#Cleaning bottom of the spreadsheet data from '70 - '94
+cheese2<-  read_excel("Midterm/cheese_per_cap.xlsx", sheet = "Cheese per cap '70-'94", skip = 34)
+cheese2<- cheese2[-c(1,2,13,24,30:38), ]
+cheese2<- cheese2[ ,-c(6,11,12)]
+colnames(cheese2)<-c("Year","Muenster", "Cream and Neufchatel","Blue","Other Dairy Cheese","Total Natural Cheese","Processed Cheese", "Foods and spreads","Total Processed Cheese Products")
+
+#Clean data for '70 - '94
+cheese <- left_join(cheese1, cheese2)
+View(head(cheese))
+
+#Importing the data for '95
+cheese3<- read_excel("Midterm/cheese_per_cap.xlsx", sheet = "Cheese per cap since '95", skip = 2)
+cheese3<- cheese3[-c(24:34), ]
+cheese3<- cheese3[ ,-c(13,14,15)]
+colnames(cheese3)<- c("Year", "Cheddar", "American Other","Total American Cheese", "Mozzarella","Italian Other", "Total Italian Cheese", "Swiss", "Blue","Brick","Muenster","Cream and Neufchatel","Other Dairy Cheese","Total Natural Cheese","Processed Cheese", "Foods and spreads","Total Processed Cheese Products")
+
+#Aligning columns for bothe the spreadsheets
+col_order<- c("Year", "Cheddar", "American Other","Total American Cheese", "Mozzarella","Italian Other", "Total Italian Cheese", "Swiss", "Blue","Brick","Muenster","Cream and Neufchatel","Other Dairy Cheese","Total Natural Cheese","Processed Cheese", "Foods and spreads","Total Processed Cheese Products")
+cheese3<- cheese3[ ,col_order]
+
+#Final clean data for the year '1970 till '2017
+Final_cheese<- rbind(cheese,cheese3)
+col_order<-c("Year",	"Cheddar",	"American Other",	"Mozzarella",	"Italian Other",	"Swiss"	,"Brick"	,"Muenster",	"Cream and Neufchatel",	"Blue",	"Other Dairy Cheese",	"Processed Cheese",	"Foods and spreads"	,"Total American Cheese",	"Total Italian Cheese",	"Total Natural Cheese",	"Total Processed Cheese Products")
+Final_cheese<- Final_cheese[ ,col_order]
+View(Final_cheese)
+colnames(Final_cheese)[1] <- "year"
+
+# Learning the basics about the Dataset
+dim(Final_cheese)
+class(Final_cheese)
+str(Final_cheese)
+
+#Converting character values to numeric for analysis
+Final_cheese = as.data.frame(sapply(Final_cheese, as.numeric, na.rm = TRUE))
+str(Final_cheese)
+summary(Final_cheese)
+
+#Importing Fluid Milk Sales dataset & converting in numeric
+excel_sheets("Midterm/fluid_milk_sales.xlsx")
+Fluidmilk<- read_excel("Midterm/fluid_milk_sales.xlsx", sheet = "fluid_milk_sales")
+Fluidmilk = as.data.frame(sapply(Fluidmilk, as.numeric, na.rm = TRUE))
+
+
+#Importing Milk Products dataset & converting in numeric
+excel_sheets("Midterm/milk_products_facts.xlsx")
+Milkproducts<- read_excel("Midterm/milk_products_facts.xlsx", sheet = "milk_products_facts")
+Milkproducts = as.data.frame(sapply(Milkproducts, as.numeric, na.rm = TRUE))
+
+
+#Importing Fluid Milk Cow dataset & converting in numeric
+
+excel_sheets("Midterm/milkcow_facts.xlsx")
+Milkcow<- read_excel("Midterm/milkcow_facts.xlsx", sheet = "milkcow_facts")
+Milkcow = as.data.frame(sapply(Milkcow, as.numeric, na.rm = TRUE))
+
+#Importing State Milk Production dataset
+excel_sheets("Midterm/state_milk_production.xlsx")
+Statemilkprod<- read_excel("Midterm/state_milk_production.xlsx", sheet = "state_milk_production")
+Statemilkprod = as.data.frame(sapply(Statemilkprod, as.numeric, na.rm = TRUE))
+
+
+# Making a combined list putting all lists together
+mylist<-list(Final_cheese,Fluidmilk,Milkproducts,Milkcow,Statemilkprod)
+
+# Pattern between all variables of Cheese dataset
+pairs(Final_cheese)
+
+# Trend between Total American,Italian,Natural Cheese
+hist(Final_cheese$`Total American Cheese`)
+hist(Final_cheese$`Total Italian Cheese`)
+hist(Final_cheese$`Total Natural Cheese`)
+
+# Cheese Production year-wise
+plot(Final_cheese$year,Final_cheese$`Total American Cheese`,pch=20) 
+
+
+```
+
+### Proposed Exploratory Data Analysis
+
+At this point out of the total 5 datasets, I have just cleared Cheese dataset and  have derived a good number of insights by plotting histograms and seeing the trend of production of total American cheese year-wise which is a positive trend. Going forward, will perform linear or logistic regression depending on the variables whether it is continuous or categorical. Predictive analysis will help me decide which type of cheese shall I increase my production in.
+
+Going forward, I will also analyse the following datasets.  
+
+1. milkcow_facts
+2. fluid_milk_sales
+3. milk_product_facts
+4. state_milk_production
+
+
